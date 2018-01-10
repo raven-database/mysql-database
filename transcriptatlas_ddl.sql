@@ -271,24 +271,28 @@ CREATE TABLE IF NOT EXISTS `vw_variantinfo` (`libraryid` INT, `chrom` INT, `posi
 -- View `vw_varanno`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `vw_varanno`;
+DROP VIEW IF EXISTS `vw_varanno`;
 CREATE  OR REPLACE ALGORITHM=UNDEFINED DEFINER=`frnakenstein`@`localhost` SQL SECURITY DEFINER VIEW `vw_varanno` AS select `a`.`libraryid` AS `libraryid`,`a`.`chrom` AS `chrom`,`a`.`position` AS `position`,`a`.`refallele` AS `refallele`,`a`.`altallele` AS `alt_allele`,group_concat(distinct `b`.`consequence` separator '; ') AS `annotation`,count(0) AS `amount` from (`VariantResult` `a` join `VariantAnnotation` `b` on(((`a`.`libraryid` = `b`.`libraryid`) and (`a`.`chrom` = `b`.`chrom`) and (`a`.`position` = `b`.`position`)))) group by `a`.`libraryid`,`a`.`chrom`,`a`.`position`;
 
 -- -----------------------------------------------------
 -- View `vw_libmetadata`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `vw_libmetadata`;
+DROP VIEW IF EXISTS `vw_libmetadata`;
 CREATE  OR REPLACE ALGORITHM=UNDEFINED DEFINER=`frnakenstein`@`localhost` SQL SECURITY DEFINER VIEW `vw_libmetadata` AS select `a`.`libraryid` AS `libraryid`,`a`.`line` AS `line`,`a`.`species` AS `species`,`a`.`tissue` AS `tissue`,`a`.`notes` AS `notes`,`b`.`mappedreads` AS `mappedreads`,`d`.`genes` AS `genes`,`c`.`totalVARIANTS` AS `totalVARIANTS`,`c`.`totalSNPS` AS `totalSNPS`,`c`.`totalINDELS` AS `totalINDELS` from (((`BirdLibraries` `a` join `MappingStats` `b` on((`a`.`libraryid` = `b`.`libraryid`))) join `VariantSummary` `c` on((`a`.`libraryid` = `c`.`libraryid`))) join `GeneSummary` `d` on((`a`.`libraryid` = `d`.`libraryid`)));
 
 -- -----------------------------------------------------
 -- View `vw_statuslog`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `vw_statuslog`;
+DROP VIEW IF EXISTS `vw_statuslog`;
 CREATE  OR REPLACE ALGORITHM=UNDEFINED DEFINER=`frnakenstein`@`localhost` SQL SECURITY DEFINER VIEW `vw_statuslog` AS select `a`.`libraryid` AS `libraryid`,`a`.`status` AS `status`,`b`.`status` AS `gene_status`,`b`.`NoSQL` AS `gene_nosql`,`c`.`status` AS `variant_status`,`c`.`NoSQL` AS `variant_nosql` from ((`TheMetadata` `a` left join `GeneSummary` `b` on((`a`.`libraryid` = `b`.`libraryid`))) left join `VariantSummary` `c` on((`a`.`libraryid` = `c`.`libraryid`)));
 
 -- -----------------------------------------------------
 -- View `vw_variantinfo`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `vw_variantinfo`;
+DROP VIEW IF EXISTS `vw_variantinfo`;
 CREATE  OR REPLACE ALGORITHM=UNDEFINED DEFINER=`frnakenstein`@`localhost` SQL SECURITY DEFINER VIEW `vw_variantinfo` AS select `a`.`libraryid` AS `libraryid`,`a`.`chrom` AS `chrom`,`a`.`position` AS `position`,`a`.`refallele` AS `refallele`,`a`.`altallele` AS `altallele`,`a`.`variantclass` AS `variantclass`,group_concat(distinct ifnull(`b`.`consequence`,'none') separator '; ') AS `annotation`,ifnull(group_concat(distinct `b`.`genename` separator '; '),'none') AS `genename`,group_concat(distinct ifnull(`a`.`existingvariant`,'none') separator '; ') AS `existingvariant` from (`VariantResult` `a` join `VariantAnnotation` `b` on(((`a`.`libraryid` = `b`.`libraryid`) and (`a`.`chrom` = `b`.`chrom`) and (`a`.`position` = `b`.`position`)))) where (`b`.`genename` is not null) group by `a`.`libraryid`,`a`.`chrom`,`a`.`position`;
 
 SET SQL_MODE=@OLD_SQL_MODE;
