@@ -10,6 +10,25 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
 
 -- -----------------------------------------------------
+-- Table `AtlasUser`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `AtlasUser`;
+CREATE TABLE IF NOT EXISTS `AtlasUser` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `firstname` VARCHAR(255) NULL DEFAULT NULL,
+  `lastname` VARCHAR(255) NULL DEFAULT NULL,
+  `username` VARCHAR(255) NOT NULL,
+  `email` VARCHAR(255) NOT NULL,
+  `password` VARCHAR(255) NOT NULL,
+  `organization` VARCHAR(255) NULL DEFAULT NULL,
+  `active` TINYINT(1) NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `username` (`username` ASC))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
 -- Table `BirdLibraries`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `BirdLibraries`;
@@ -92,19 +111,20 @@ ENGINE = InnoDB
 DEFAULT CHARACTER SET = latin1;
 
 -- -----------------------------------------------------
--- Table `GeneSummary`
+-- Table `GenesSummary`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `GeneSummary`;
-CREATE TABLE IF NOT EXISTS `GeneSummary` (
+DROP TABLE IF EXISTS `GenesSummary`;
+CREATE TABLE IF NOT EXISTS `GenesSummary` (
   `libraryid` INT(11) NOT NULL DEFAULT '0',
   `genes` INT(11) NULL DEFAULT NULL,
   `diffexpresstool` VARCHAR(150) NULL DEFAULT NULL,
 	`countstool` VARCHAR(150) NULL DEFAULT NULL,
-  `status` CHAR(5) NULL DEFAULT NULL,
+  `genestatus` CHAR(5) NULL DEFAULT NULL,
+	`countstatus` CHAR(5) NULL DEFAULT NULL,
   `NoSQL` CHAR(10) NULL DEFAULT NULL,
 	`date` DATE NULL DEFAULT NULL,
   PRIMARY KEY (`libraryid`),
-  CONSTRAINT `genesummary_ibfk_1`
+  CONSTRAINT `genessummary_ibfk_1`
     FOREIGN KEY (`libraryid`)
     REFERENCES `MappingStats` (`libraryid`))
 ENGINE = InnoDB
@@ -128,13 +148,13 @@ CREATE TABLE IF NOT EXISTS `GenesExpression` (
   `fpkmconflow` DOUBLE(20,5) NOT NULL DEFAULT '0.00000',
   `fpkmconfhigh` DOUBLE(20,5) NOT NULL DEFAULT '0.00000',
   `fpkmstatus` VARCHAR(10) NULL DEFAULT NULL,
-  PRIMARY KEY (`libraryid`, `geneid`, `geneshortname`, `chromno`, `chromstart`, `chromstop`, `fpkm`, `fpkmconflow`, `fpkmconfhigh`),
+  PRIMARY KEY (`libraryid`, `geneid`, `geneshortname`, `chrom`, `chromstart`, `chromstop`, `fpkm`, `fpkmconflow`, `fpkmconfhigh`),
   INDEX `genesexp_indx_gene_short_name` (`geneshortname` ASC),
   INDEX `genesexp_index_gene_and_fpkm` (`geneshortname` ASC, `fpkm` ASC),
   INDEX `genesexp_index_gene_and_fpkm_and_library` (`geneshortname` ASC, `fpkm` ASC, `libraryid` ASC),
   CONSTRAINT `genesexp_ibfk_1`
     FOREIGN KEY (`libraryid`)
-    REFERENCES `GeneSummary` (`libraryid`))
+    REFERENCES `GenesSummary` (`libraryid`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = latin1;
 
@@ -151,28 +171,8 @@ CREATE TABLE IF NOT EXISTS `ReadCount` (
   INDEX `readcount_gene_name` (`genename` ASC),
   CONSTRAINT `readcount_ibfk_1`
     FOREIGN KEY (`libraryid`)
-    REFERENCES `GeneSummary` (`libraryid`))
+    REFERENCES `GenesSummary` (`libraryid`))
 ENGINE = InnoDB
-DEFAULT CHARACTER SET = latin1;
-
-
--- -----------------------------------------------------
--- Table `AtlasUser`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `AtlasUser`;
-CREATE TABLE IF NOT EXISTS `AtlasUser` (
-  `id` INT(11) NOT NULL AUTO_INCREMENT,
-  `firstname` VARCHAR(255) NULL DEFAULT NULL,
-  `lastname` VARCHAR(255) NULL DEFAULT NULL,
-  `username` VARCHAR(255) NOT NULL,
-  `email` VARCHAR(255) NOT NULL,
-  `password` VARCHAR(255) NOT NULL,
-  `organization` VARCHAR(255) NULL DEFAULT NULL,
-  `active` TINYINT(1) NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `username` (`username` ASC))
-ENGINE = InnoDB
-AUTO_INCREMENT = 11
 DEFAULT CHARACTER SET = latin1;
 
 
@@ -255,7 +255,7 @@ CREATE TABLE IF NOT EXISTS `vw_varanno` (`libraryid` INT, `chrom` INT, `position
 -- -----------------------------------------------------
 -- Placeholder table for view `vw_libmetadata`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `vw_libmetadata` (`libraryid` INT, `line` INT, `species` INT, `tissue` INT, `notes` INT, `mappedreads` INT, `genes` INT, `totalVARIANTS` INT, `totalSNPS` INT, `totalINDELS` INT);
+CREATE TABLE IF NOT EXISTS `vw_libmetadata` (`libraryid` INT, `line` INT, `species` INT, `tissue` INT, `notes` INT, `mappedreads` INT, `alignmentrate` INT,`genes` INT, `totalVARIANTS` INT, `totalSNPS` INT, `totalINDELS` INT);
 
 -- -----------------------------------------------------
 -- Placeholder table for view `vw_statuslog`
@@ -279,14 +279,14 @@ CREATE  OR REPLACE ALGORITHM=UNDEFINED DEFINER=`frnakenstein`@`localhost` SQL SE
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `vw_libmetadata`;
 DROP VIEW IF EXISTS `vw_libmetadata`;
-CREATE  OR REPLACE ALGORITHM=UNDEFINED DEFINER=`frnakenstein`@`localhost` SQL SECURITY DEFINER VIEW `vw_libmetadata` AS select `a`.`libraryid` AS `libraryid`,`a`.`line` AS `line`,`a`.`species` AS `species`,`a`.`tissue` AS `tissue`,`a`.`notes` AS `notes`,`b`.`mappedreads` AS `mappedreads`,`d`.`genes` AS `genes`,`c`.`totalVARIANTS` AS `totalVARIANTS`,`c`.`totalSNPS` AS `totalSNPS`,`c`.`totalINDELS` AS `totalINDELS` from (((`BirdLibraries` `a` join `MappingStats` `b` on((`a`.`libraryid` = `b`.`libraryid`))) join `VariantSummary` `c` on((`a`.`libraryid` = `c`.`libraryid`))) join `GeneSummary` `d` on((`a`.`libraryid` = `d`.`libraryid`)));
+CREATE  OR REPLACE ALGORITHM=UNDEFINED DEFINER=`frnakenstein`@`localhost` SQL SECURITY DEFINER VIEW `vw_libmetadata` AS select `a`.`libraryid` AS `libraryid`,`a`.`line` AS `line`,`a`.`species` AS `species`,`a`.`tissue` AS `tissue`,`a`.`notes` AS `notes`,`b`.`mappedreads` AS `mappedreads`,`b`.`alignmentrate` AS `alignmentrate`,`d`.`genes` AS `genes`,`c`.`totalVARIANTS` AS `totalVARIANTS`,`c`.`totalSNPS` AS `totalSNPS`,`c`.`totalINDELS` AS `totalINDELS` from (((`BirdLibraries` `a` join `MappingStats` `b` on((`a`.`libraryid` = `b`.`libraryid`))) join `VariantSummary` `c` on((`a`.`libraryid` = `c`.`libraryid`))) join `GenesSummary` `d` on((`a`.`libraryid` = `d`.`libraryid`)));
 
 -- -----------------------------------------------------
 -- View `vw_statuslog`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `vw_statuslog`;
 DROP VIEW IF EXISTS `vw_statuslog`;
-CREATE  OR REPLACE ALGORITHM=UNDEFINED DEFINER=`frnakenstein`@`localhost` SQL SECURITY DEFINER VIEW `vw_statuslog` AS select `a`.`libraryid` AS `libraryid`,`a`.`status` AS `status`,`b`.`status` AS `gene_status`,`b`.`NoSQL` AS `gene_nosql`,`c`.`status` AS `variant_status`,`c`.`NoSQL` AS `variant_nosql` from ((`TheMetadata` `a` left join `GeneSummary` `b` on((`a`.`libraryid` = `b`.`libraryid`))) left join `VariantSummary` `c` on((`a`.`libraryid` = `c`.`libraryid`)));
+CREATE  OR REPLACE ALGORITHM=UNDEFINED DEFINER=`frnakenstein`@`localhost` SQL SECURITY DEFINER VIEW `vw_statuslog` AS select `a`.`libraryid` AS `libraryid`,`a`.`status` AS `map_status`,`b`.`genestatus` AS `gene_status`,`b`.`countstatus` AS `count_status`,`b`.`NoSQL` AS `gene_nosql`,`c`.`status` AS `variant_status`,`c`.`NoSQL` AS `variant_nosql` from ((`TheMetadata` `a` left join `GenesSummary` `b` on((`a`.`libraryid` = `b`.`libraryid`))) left join `VariantSummary` `c` on((`a`.`libraryid` = `c`.`libraryid`)));
 
 -- -----------------------------------------------------
 -- View `vw_variantinfo`
