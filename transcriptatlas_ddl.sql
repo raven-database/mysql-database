@@ -152,8 +152,8 @@ CREATE TABLE IF NOT EXISTS `VariantResult` (
   `libraryid` INT(11) NOT NULL DEFAULT '0',
   `chrom` VARCHAR(150) NOT NULL DEFAULT '',
   `position` INT(11) NOT NULL DEFAULT '0',
-  `refallele` VARCHAR(1000) NULL DEFAULT NULL,
-  `altallele` VARCHAR(1000) NULL DEFAULT NULL,
+  `refallele` VARCHAR(750) NULL DEFAULT NULL,
+  `altallele` VARCHAR(750) NULL DEFAULT NULL,
   `quality` DOUBLE(20,5) NULL DEFAULT NULL,
   `variantclass` VARCHAR(150) NULL DEFAULT NULL,
   `zygosity` VARCHAR(150) NULL DEFAULT NULL,
@@ -175,14 +175,14 @@ CREATE TABLE IF NOT EXISTS `VariantAnnotation` (
   `position` INT(11) NOT NULL DEFAULT '0',
   `consequence` VARCHAR(150) NOT NULL DEFAULT '',
   `source` VARCHAR(150) NULL DEFAULT NULL,
-	`geneid` VARCHAR(1000) NOT NULL DEFAULT '',
-  `genename` VARCHAR(1000) NULL DEFAULT NULL,
+	`geneid` VARCHAR(750) NOT NULL DEFAULT '',
+  `genename` VARCHAR(750) NULL DEFAULT NULL,
   `transcript` VARCHAR(250) NULL DEFAULT NULL,
   `feature` VARCHAR(150) NULL DEFAULT NULL,
   `genetype` VARCHAR(200) NULL DEFAULT NULL,
-  `proteinposition` VARCHAR(1000) NOT NULL DEFAULT '',
-  `aminoacidchange` VARCHAR(1000) NULL DEFAULT NULL,
-  `codonchange` VARCHAR(1000) NULL DEFAULT NULL,
+  `proteinposition` VARCHAR(750) NOT NULL DEFAULT '',
+  `aminoacidchange` VARCHAR(750) NULL DEFAULT NULL,
+  `codonchange` VARCHAR(750) NULL DEFAULT NULL,
   PRIMARY KEY (`libraryid`, `chrom`, `position`, `consequence`, `geneid`, `proteinposition`),
   INDEX `variantannotation_indx_genename` (`genename` ASC),
   CONSTRAINT `variantannotation_ibfk_1`
@@ -194,69 +194,33 @@ DEFAULT CHARACTER SET = latin1;
 -- -----------------------------------------------------
 -- View `vw_varanno`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `vw_varanno`;
 DROP VIEW IF EXISTS `vw_varanno`;
 CREATE VIEW `vw_varanno` AS
-	select `a`.`libraryid` AS `libraryid`,`a`.`chrom` AS `chrom`,`a`.`position` AS `position`,
-		`a`.`refallele` AS `refallele`,`a`.`altallele` AS `alt_allele`,
-		group_concat(distinct `b`.`consequence` separator '; ') AS `annotation`,
-		count(0) AS `amount`
-	from (`VariantResult` `a` join `VariantAnnotation` `b` on(((`a`.`libraryid` = `b`.`libraryid`)
-		and (`a`.`chrom` = `b`.`chrom`) and (`a`.`position` = `b`.`position`))))
-		group by `a`.`libraryid`,`a`.`chrom`,`a`.`position`;
+	select `a`.`libraryid` AS `libraryid`,`a`.`chrom` AS `chrom`,`a`.`position` AS `position`, `a`.`refallele` AS `refallele`,`a`.`altallele` AS `alt_allele`, group_concat(distinct `b`.`consequence` separator '; ') AS `annotation`, count(0) AS `amount` from (`VariantResult` `a` join `VariantAnnotation` `b` on(((`a`.`libraryid` = `b`.`libraryid`) and (`a`.`chrom` = `b`.`chrom`) and (`a`.`position` = `b`.`position`)))) group by `a`.`libraryid`,`a`.`chrom`,`a`.`position`;
 
 -- -----------------------------------------------------
 -- View `vw_libmetadata`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `vw_libmetadata`;
 DROP VIEW IF EXISTS `vw_libmetadata`;
-CREATE VIEW `vw_libmetadata` AS
-	select `a`.`libraryid` AS `libraryid`,`a`.`line` AS `line`,`a`.`species` AS `species`,`a`.`tissue` AS `tissue`,
-		`a`.`notes` AS `notes`,`b`.`mappedreads` AS `mappedreads`,`b`.`alignmentrate` AS `alignmentrate`,
-		`d`.`genes` AS `genes`,`c`.`totalVARIANTS` AS `totalVARIANTS`,`c`.`totalSNPS` AS `totalSNPS`,
-		`c`.`totalINDELS` AS `totalINDELS`
-	from (((`BirdLibraries` `a` join `MappingStats` `b` on((`a`.`libraryid` = `b`.`libraryid`)))
-		join `VariantSummary` `c` on((`a`.`libraryid` = `c`.`libraryid`)))
-		join `GenesSummary` `d` on((`a`.`libraryid` = `d`.`libraryid`)));
+CREATE VIEW `vw_libmetadata` AS select `a`.`libraryid` AS `libraryid`,`a`.`line` AS `line`,`a`.`species` AS `species`,`a`.`tissue` AS `tissue`, `a`.`notes` AS `notes`,`b`.`mappedreads` AS `mappedreads`,`b`.`alignmentrate` AS `alignmentrate`, `d`.`genes` AS `genes`,`c`.`totalVARIANTS` AS `totalVARIANTS`,`c`.`totalSNPS` AS `totalSNPS`, `c`.`totalINDELS` AS `totalINDELS` from (((`BirdLibraries` `a` join `MappingStats` `b` on((`a`.`libraryid` = `b`.`libraryid`))) join `VariantSummary` `c` on((`a`.`libraryid` = `c`.`libraryid`))) join `GenesSummary` `d` on((`a`.`libraryid` = `d`.`libraryid`)));
 
 -- -----------------------------------------------------
 -- View `vw_statuslog`
 -- -----------------------------------------------------
 DROP VIEW IF EXISTS `vw_statuslog`;
-CREATE VIEW `vw_statuslog` AS
-	select `a`.`libraryid` AS `libraryid`,`a`.`status` AS `map_status`,`b`.`genestatus` AS `gene_status`,
-		`b`.`countstatus` AS `count_status`,`c`.`status` AS `variant_status`
-	from ((`TheMetadata` `a` left join `GenesSummary` `b` on((`a`.`libraryid` = `b`.`libraryid`)))
-		left join `VariantSummary` `c` on((`a`.`libraryid` = `c`.`libraryid`)));
+CREATE VIEW `vw_statuslog` AS select `a`.`libraryid` AS `libraryid`,`a`.`status` AS `map_status`,`b`.`genestatus` AS `gene_status`, `b`.`countstatus` AS `count_status`,`c`.`status` AS `variant_status` from ((`TheMetadata` `a` left join `GenesSummary` `b` on((`a`.`libraryid` = `b`.`libraryid`))) left join `VariantSummary` `c` on((`a`.`libraryid` = `c`.`libraryid`)));
 
 -- -----------------------------------------------------
 -- View `vw_variantinfo`
 -- -----------------------------------------------------
 DROP VIEW IF EXISTS `vw_variantinfo`;
-CREATE VIEW `vw_variantinfo` AS
-	select `a`.`libraryid` AS `libraryid`,`a`.`chrom` AS `chrom`,`a`.`position` AS `position`,
-		`a`.`refallele` AS `refallele`,`a`.`altallele` AS `altallele`,`a`.`variantclass` AS `variantclass`,
-		group_concat(distinct ifnull(`b`.`consequence`,'none') separator '; ') AS `annotation`,
-		ifnull(group_concat(distinct `b`.`genename` separator '; '),'none') AS `genename`,
-		group_concat(distinct ifnull(`a`.`existingvariant`,'none') separator '; ') AS `existingvariant`
-	from (`VariantResult` `a` join `VariantAnnotation` `b` on(((`a`.`libraryid` = `b`.`libraryid`)
-		and (`a`.`chrom` = `b`.`chrom`) and (`a`.`position` = `b`.`position`))))
-		where (`b`.`genename` is not null) group by `a`.`libraryid`,`a`.`chrom`,`a`.`position`;
+CREATE VIEW `vw_variantinfo` AS select `a`.`libraryid` AS `libraryid`,`a`.`chrom` AS `chrom`,`a`.`position` AS `position`, `a`.`refallele` AS `refallele`,`a`.`altallele` AS `altallele`,`a`.`variantclass` AS `variantclass`, group_concat(distinct ifnull(`b`.`consequence`,'none') separator '; ') AS `annotation`, ifnull(group_concat(distinct `b`.`genename` separator '; '),'none') AS `genename`, group_concat(distinct ifnull(`a`.`existingvariant`,'none') separator '; ') AS `existingvariant` from (`VariantResult` `a` join `VariantAnnotation` `b` on(((`a`.`libraryid` = `b`.`libraryid`) and (`a`.`chrom` = `b`.`chrom`) and (`a`.`position` = `b`.`position`)))) where (`b`.`genename` is not null) group by `a`.`libraryid`,`a`.`chrom`,`a`.`position`;
 
 -- -----------------------------------------------------
 -- View `vw_variantnosql`
 -- -----------------------------------------------------
 DROP VIEW IF EXISTS `vw_variantnosql`;
-CREATE VIEW `vw_variantnosql` AS
-	select `a`.`variantclass` AS `variantclass`,`a`.`zygosity` AS `zygosity`,`a`.`dbsnpvariant` AS `dbsnpvariant`,
-		`b`.`source` AS `source`,`b`.`consequence` AS `consequence`,`b`.`geneid` AS `geneid`,
-		`b`.`genename` AS `genename`,`b`.`transcript` AS `transcript`,`b`.`feature` AS `feature`,
-		`b`.`genetype` AS `genetype`,`a`.`refallele` AS `refallele`,`a`.`altallele` AS `altallele`,
-		`c`.`tissue` AS `tissue`,`a`.`chrom` AS `chrom`,`b`.`aminoacidchange` AS `aminoacidchange`,`b`.`codonchange` AS `codonchange`,
-		`c`.`organism` AS `organism`,`a`.`quality` AS `quality`,`a`.`libaryid` AS `libraryid`,`a`.`position` AS `position`,
-		`b`.`proteinposition` AS `proteinposition`
-	from ((`VariantResult` `a` join `VariantAnnotation` `b` on (((`a`.`sampleid` = `b`.`sampleid`) and (`a`.`chrom` = `b`.`chrom`) and (`a`.`position` = `b`.`position`))))
-		join BirdLibraries `c` on ((`a`.`sampleid` = `c`.`sampleid`)));
+CREATE VIEW `vw_variantnosql` AS select `a`.`variantclass` AS `variantclass`,`a`.`zygosity` AS `zygosity`,`a`.`existingvariant` AS `existingvariant`, `b`.`source` AS `source`,`b`.`consequence` AS `consequence`,`b`.`geneid` AS `geneid`, `b`.`genename` AS `genename`,`b`.`transcript` AS `transcript`,`b`.`feature` AS `feature`, `b`.`genetype` AS `genetype`,`a`.`refallele` AS `refallele`,`a`.`altallele` AS `altallele`, `c`.`tissue` AS `tissue`,`a`.`chrom` AS `chrom`,`b`.`aminoacidchange` AS `aminoacidchange`,`b`.`codonchange` AS `codonchange`, `c`.`species` AS `species`,`a`.`quality` AS `quality`,`a`.`libraryid` AS `libraryid`,`a`.`position` AS `position`, `b`.`proteinposition` AS `proteinposition` from ((`VariantResult` `a` join `VariantAnnotation` `b` on (((`a`.`libraryid` = `b`.`libraryid`) and (`a`.`chrom` = `b`.`chrom`) and (`a`.`position` = `b`.`position`)))) join BirdLibraries `c` on ((`a`.`libraryid` = `c`.`libraryid`)));
 		
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
